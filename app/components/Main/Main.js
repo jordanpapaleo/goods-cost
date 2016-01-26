@@ -21,19 +21,36 @@ export default class Main extends Component {
 
   constructor (props) {
     super(props)
+
+    this.state = {}
+    this.renderIngredients = this.renderIngredients.bind(this)
+  }
+
+  componentWillMount () {
+    const self = this;
+    const query = new Parse.Query('Ingredient')
+    // query.equalTo('name', 'butter')
+    query.ascending('name')
+    query.find({
+      success(results) {
+        console.info('ingredient query', results)
+
+        self.setState({
+          ingredients: results
+        })
+      },
+      error(error) {
+
+      }
+    });
   }
 
   componentWillReceiveProps (props) {
     console.info('CWRP', props)
   }
 
-  onClick () {
+  seedIngredients() {
     const Ingredient = Parse.Object.extend('Ingredient')
-    const Recipe = Parse.Object.extend('Recipe')
-    const recipe = new Recipe()
-    recipe.set('name', 'Gumbo')
-    recipe.set('yeild', 10)
-
     const ingredients = ['milk', 'flour', 'sugar', 'butter']
     const temp = []
 
@@ -44,12 +61,19 @@ export default class Main extends Component {
       ingredient.save()
       temp.push(ingredient)
     }
+  }
 
-    recipe.set('ingredients', temp)
+  onClick () {
+    const Recipe = Parse.Object.extend('Recipe')
+    const recipe = new Recipe()
+    recipe.set('name', 'Gumbo')
+    recipe.set('yeild', 10)
+
+    // recipe.set('ingredients', temp)
 
     recipe.save(null, {
       success (payload) {
-        console.info('REcipe saved', payload)
+        console.info('Recipe saved', payload)
       },
       error (payload, error) {
         console.error('Failed to create new object', error)
@@ -57,21 +81,37 @@ export default class Main extends Component {
     })
 
     console.info('Name', recipe.get('name'))
-
-    /* console.warn('Dispatch addRecipe')
-    this.props.dispatch(addRecipe({
-      isRecipe: true
-    })) */
   }
 
   render () {
+    console.info('THIS.STATE', this.state)
+
     return (
       <div>
         <h1>Main</h1>
-        <button onClick={ this.onClick.bind(this) }>Test</button>
+        <button onClick={ this.onClick.bind(this) }>Add Recipe</button>
+        <button onClick={ this.seedIngredients.bind(this) }>Seed Ingredients</button>
+        { (this.state.ingredients) ? this.renderIngredients() : null }
         <Ingredients />
         <Recipes />
       </div>
+    )
+  }
+
+  renderIngredients() {
+    const { ingredients } = this.state;
+
+    return (
+      <div>
+        <h2>Your ingredients</h2>
+        <ul>
+          { ingredients.map((ingredient) => {
+            return (
+              <li>{ ingredient.get('name') } { ingredient.get('cost') }</li>
+            )
+          }) }
+        </ul>
+    </div>
     )
   }
 }
